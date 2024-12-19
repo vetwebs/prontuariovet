@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico de Parâmetros</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        #buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px;
+        }
+        button {
+            padding: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 90%;
+            max-width: 300px;
+            text-align: center;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        canvas {
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 16 / 9; /* Define proporção fixa do gráfico */
+            margin: 20px 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gráfico de Parâmetros</h1>
+    <div id="buttons">
+        <button id="convertToExcel">Converter para Gráfico</button>
+    </div>
+    <canvas id="chart"></canvas>
+    <script>
+        let chartInstance;
+
+        // Função para criar ou atualizar o gráfico
+        function updateChart(labels, hrValues, spo2Values, prValues, sysValues, diaValues, tempValues, respValues) {
+            const ctx = document.getElementById('chart').getContext('2d');
+            if (chartInstance) {
+                chartInstance.destroy(); // Destrói o gráfico existente antes de criar um novo
+            }
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'HR',
+                            data: hrValues,
+                            borderColor: 'blue',
+                            fill: false
+                        },
+                        {
+                            label: 'SPO2',
+                            data: spo2Values,
+                            borderColor: 'green',
+                            fill: false
+                        },
+                        {
+                            label: 'PR',
+                            data: prValues,
+                            borderColor: 'red',
+                            fill: false
+                        },
+                        {
+                            label: 'SYS',
+                            data: sysValues,
+                            borderColor: 'purple',
+                            fill: false
+                        },
+                        {
+                            label: 'DIA',
+                            data: diaValues,
+                            borderColor: 'orange',
+                            fill: false
+                        },
+                        {
+                            label: 'TEMP',
+                            data: tempValues,
+                            borderColor: 'cyan',
+                            fill: false
+                        },
+                        {
+                            label: 'RESP',
+                            data: respValues,
+                            borderColor: 'magenta',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Gráfico de Parâmetros'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Função para processar o Excel e gerar o gráfico
+        function processExcel(content) {
+            try {
+                const workbook = XLSX.read(content, { type: 'binary' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const data = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                const labels = [];
+                const hrValues = [];
+                const spo2Values = [];
+                const prValues = [];
+                const sysValues = [];
+                const diaValues = [];
+                const tempValues = [];
+                const respValues = [];
+
+                data.forEach((row, index) => {
+                    if (index === 0 || row.length < 8) return; // Ignorar cabeçalho e linhas incompletas
+
+                    let time;
+                    if (row[0] && !isNaN(Date.parse(row[0]))) {
+                        time = new Date(row[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    } else {
+                        console.error(`Linha ${index + 1}: Data inválida.`, row[0]);
+                        time = 'Inválido';
+                    }
+
+                    labels.push(time);
+                    hrValues.push(Number(row[1]) || 0);
+                    spo2Values.push(Number(row[2]) || 0);
+                    prValues.push(Number(row[3]) || 0);
+                    sysValues.push(Number(row[4]) || 0);
+                    diaValues.push(Number(row[5]) || 0);
+                    tempValues.push(Number(row[6]) || 0);
+                    respValues.push(Number(row[7]) || 0);
+                });
+
+                if (labels.length === 0) {
+                    alert('Nenhum dado válido encontrado no arquivo Excel.');
+                    return;
+                }
+
+                updateChart(labels, hrValues, spo2Values, prValues, sysValues, diaValues, tempValues, respValues);
+            } catch (error) {
+                console.error('Erro ao processar o arquivo Excel:', error);
+                alert('O arquivo Excel é inválido ou está no formato incorreto.');
+            }
+        }
+
+        // Listener para o botão "Selecionar Tabela e Converter para Gráfico"
+        document.getElementById('convertToExcel').addEventListener('click', function () {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx, .xls';
+            input.onchange = function (event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const content = e.target.result;
+                        processExcel(content);
+                    };
+                    reader.readAsBinaryString(file);
+                }
+            };
+            input.click();
+        });
+
+        // Gráfico inicial vazio
+        updateChart([], [], [], [], [], [], [], []);
+    </script>
+</body>
+</html>

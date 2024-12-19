@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parametros Vitais</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            width: 30%;
+            text-align: right;
+            margin-right: 10px;
+        }
+        input {
+            width: 60px;
+            min-width: 60px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 15px;
+            text-align: center;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        .value-display {
+            width: auto;
+            margin-left: 10px;
+            text-align: left;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .comparison {
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        .comparison.baixo {
+            color: red;
+        }
+        .comparison.normal {
+            color: green;
+        }
+        .comparison.alto {
+            color: blue;
+        }
+        .print-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .print-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ageSelect = document.getElementById('age');
+            const valueDisplays = {
+                hr: document.getElementById('hr-value'),
+                spo2: document.getElementById('spo2-value'),
+                pr: document.getElementById('pr-value'),
+                sys: document.getElementById('sys-value'),
+                dia: document.getElementById('dia-value'),
+                temp: document.getElementById('temp-value'),
+                resp: document.getElementById('resp-value')
+            };
+            const inputs = {
+                hr: document.getElementById('hr'),
+                spo2: document.getElementById('spo2'),
+                pr: document.getElementById('pr'),
+                sys: document.getElementById('sys'),
+                dia: document.getElementById('dia'),
+                temp: document.getElementById('temp'),
+                resp: document.getElementById('resp')
+            };
+            const comparisons = {
+                hr: document.createElement('span'),
+                spo2: document.createElement('span'),
+                pr: document.createElement('span'),
+                sys: document.createElement('span'),
+                dia: document.createElement('span'),
+                temp: document.createElement('span'),
+                resp: document.createElement('span')
+            };
+
+            // Append comparison spans
+            Object.keys(comparisons).forEach(key => {
+                comparisons[key].className = 'comparison';
+                valueDisplays[key].parentNode.appendChild(comparisons[key]);
+            });
+
+            ageSelect.addEventListener('change', function () {
+                const ageValue = ageSelect.value;
+                if (ageValue) {
+                    fetch('parametrosFixos.json')
+                        .then(response => response.json())
+                        .then(data => {
+                            const params = data[ageValue];
+                            if (params) {
+                                Object.keys(params).forEach(param => {
+                                    if (valueDisplays[param]) {
+                                        valueDisplays[param].textContent = `${params[param].min} - ${params[param].max}` || '-';
+                                        inputs[param].addEventListener('input', function () {
+                                            const inputValue = parseFloat(inputs[param].value);
+                                            const minValue = parseFloat(params[param].min);
+                                            const maxValue = parseFloat(params[param].max);
+
+                                            if (inputValue < minValue) {
+                                                comparisons[param].textContent = ' Baixo';
+                                                comparisons[param].className = 'comparison baixo';
+                                            } else if (inputValue >= minValue && inputValue <= maxValue) {
+                                                comparisons[param].textContent = ' Normal';
+                                                comparisons[param].className = 'comparison normal';
+                                            } else {
+                                                comparisons[param].textContent = ' Alto';
+                                                comparisons[param].className = 'comparison alto';
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        })
+                        .catch(error => console.error('Error fetching fixed parameters:', error));
+                } else {
+                    Object.values(valueDisplays).forEach(display => {
+                        display.textContent = '-';
+                    });
+                    Object.values(comparisons).forEach(comparison => {
+                        comparison.textContent = '';
+                        comparison.className = 'comparison';
+                    });
+                }
+            });
+        });
+
+        function generateChart() {
+            const parameters = ["hr", "spo2", "pr", "sys", "dia", "temp", "resp"];
+            const labels = [];
+            const inputValues = [];
+            const minValues = [];
+            const maxValues = [];
+
+            parameters.forEach(param => {
+                const input = parseFloat(document.getElementById(param).value) || 0;
+                const referenceText = document.getElementById(`${param}-value`).textContent;
+                const [min, max] = referenceText.split('-').map(val => parseFloat(val.trim()) || 0);
+
+                labels.push(param.toUpperCase());
+                inputValues.push(input);
+                minValues.push(min);
+                maxValues.push(max);
+            });
+
+            const queryString = `labels=${labels.join(',')}&inputs=${inputValues.join(',')}&mins=${minValues.join(',')}&maxs=${maxValues.join(',')}`;
+            window.open(`chart.html?${queryString}`, '_blank');
+        }
+
+        function printData() {
+            const printContent = document.createElement('table');
+            const headerRow = printContent.insertRow();
+            headerRow.innerHTML = '<th>Parameter</th><th>Input</th><th>Reference</th><th>Status</th>';
+
+            const parameters = ["hr", "spo2", "pr", "sys", "dia", "temp", "resp"];
+            parameters.forEach(param => {
+                const row = printContent.insertRow();
+                const input = document.getElementById(param).value;
+                const reference = document.getElementById(`${param}-value`).textContent;
+                const comparison = document.querySelector(`#${param}-value + .comparison`).textContent.trim();
+
+                row.innerHTML = `
+                    <td>${param.toUpperCase()}</td>
+                    <td>${input}</td>
+                    <td>${reference}</td>
+                    <td>${comparison}</td>
+                `;
+            });
+
+            const originalContent = document.body.innerHTML;
+            document.body.innerHTML = '';
+            document.body.appendChild(printContent);
+            window.print();
+            document.body.innerHTML = originalContent;
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="form-group">
+            <label for="age">Faixa Etária:</label>
+            <select id="age" name="age" required>
+                <option value="">Selecione</option>
+                <option value="jovem">Jovem</option>
+                <option value="adulto">Adulto</option>
+                <option value="senior">Senior</option>
+            </select>
+        </div>
+        <h2>Sinais Vitais</h2>
+        <form>
+            <div class="form-group">
+                <label for="hr">HR:</label>
+                <input type="number" id="hr" name="hr" required>
+                <span class="value-display" id="hr-value">-</span>
+            </div>
+            <div class="form-group">
+                <label for="spo2">SpO2:</label>
+                <input type="number" id="spo2" name="spo2" required>
+                <span class="value-display" id="spo2-value">-</span>
+            </div>
+            <div class="form-group">
+                <label for="pr">PR:</label>
+                <input type="number" id="pr" name="pr" required>
+                <span class="value-display" id="pr-value">-</span>
+            </div>
+            <div class="form-group">
+                <label for="sys">SYS:</label>
+                <input type="number" id="sys" name="sys" required>
+                <span class="value-display" id="sys-value">-</span>
+            </div>
+            <div class="form-group">
+                <label for="dia">DIA:</label>
+                <input type="number" id="dia" name="dia" required>
+                <span class="value-display" id="dia-value">-</span>
+            </div>
+            <div class="form-group">
+                <label for="temp">TEMP:</label>
+                <input type="number" step="0.1" id="temp" name="temp" required>
+                <span class="value-display" id="temp-value">-</span>
+            </div>
+            <div class="form-group">
+                <label for="resp">RESP:</label>
+                <input type="number" id="resp" name="resp" required>
+                <span class="value-display" id="resp-value">-</span>
+            </div>
+        </form>
+        <button class="print-btn" onclick="printData()">Imprimir</button>
+        <button class="print-btn" onclick="generateChart()">Gráfico</button>
+    </div>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda de Consultas</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            color: #007BFF;
+        }
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .filters input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .filters button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        .appointment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .appointment {
+            background: #e9f7fd;
+            border: 1px solid #d3e9f3;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .appointment:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .appointment-info {
+            line-height: 1.5;
+        }
+        .appointment-info p {
+            margin: 5px 0;
+            font-size: 0.95rem;
+        }
+        .appointment-info strong {
+            color: #333;
+        }
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .btn-delete:hover {
+            background-color: #c0392b;
+        }
+        .no-appointments {
+            text-align: center;
+            font-size: 1rem;
+            color: #777;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Agenda de Consultas</h1>
+        <div class="filters">
+            <input type="date" id="filter-date" placeholder="Selecione uma data">
+            <button onclick="filterAppointments()">Filtrar</button>
+        </div>
+        <div id="appointment-list" class="appointment-grid"></div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", loadAppointments);
+
+        function loadAppointments(filterDate = null) {
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            const appointmentList = document.getElementById('appointment-list');
+            appointmentList.innerHTML = "";
+
+            const filteredAppointments = filterDate
+                ? appointments.filter(app => app.appointmentDate === filterDate)
+                : appointments;
+
+            if (filteredAppointments.length === 0) {
+                appointmentList.innerHTML = '<p class="no-appointments">Nenhuma consulta encontrada.</p>';
+                return;
+            }
+
+            filteredAppointments.forEach((appointment, index) => {
+                const appointmentDiv = document.createElement('div');
+                appointmentDiv.classList.add('appointment');
+                appointmentDiv.innerHTML = `
+                    <div class="appointment-info">
+                        <p><strong>🐾 Proprietário:</strong> ${appointment.owner || "Não informado"}</p>
+                        <p><strong>🐶 Nome do Animal:</strong> ${appointment.animalName || "Não informado"}</p>
+                        <p><strong>📅 Data:</strong> ${appointment.appointmentDate || "Não informado"}</p>
+                        <p><strong>⏰ Horário:</strong> ${appointment.appointmentTime || "Não informado"}</p>
+                        <p><strong>📋 Idade:</strong> ${appointment.age || "Não informado"}</p>
+                        <p><strong>⚧ Sexo:</strong> ${appointment.gender || "Não informado"}</p>
+                        <p><strong>🩺 Sintomas:</strong> ${appointment.symptoms || "Não informado"}</p>
+                        <p><strong>📝 Observações:</strong> ${appointment.observations || "Não informado"}</p>
+                    </div>
+                    <button class="btn-delete" onclick="deleteAppointment(${index})">Excluir</button>
+                `;
+                appointmentList.appendChild(appointmentDiv);
+            });
+        }
+
+        function filterAppointments() {
+            const filterDate = document.getElementById('filter-date').value;
+            loadAppointments(filterDate);
+        }
+
+        function deleteAppointment(index) {
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            appointments.splice(index, 1); // Remove o item pelo índice
+            localStorage.setItem('appointments', JSON.stringify(appointments));
+            loadAppointments(); // Recarrega a lista
+            alert("Consulta excluída com sucesso!");
+        }
+
+        function addAppointment(newAppointment) {
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            appointments.push(newAppointment);
+            localStorage.setItem('appointments', JSON.stringify(appointments));
+            loadAppointments();
+        }
+    </script>
+</body>
+</html>

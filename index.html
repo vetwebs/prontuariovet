@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prontuário Veterinário</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(120deg, #f4f4f9, #e3f2fd);
+            color: #333;
+        }
+        .header {
+            background-color: #007BFF;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Adjusted alignment to move content higher */
+            height: calc(100vh - 100px);
+            padding: 20px;
+            margin-top: 20px; /* Added margin to control spacing */
+        }
+        .menu {
+            max-width: 500px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+            padding: 30px;
+            text-align: center;
+        }
+        .menu h2 {
+            margin-bottom: 25px;
+            color: #444;
+            font-size: 22px;
+        }
+        .menu button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .menu button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .menu button:active {
+            background-color: #004080;
+            transform: translateY(0);
+        }
+        .menu button:focus {
+            outline: none;
+            box-shadow: 0 0 5px #007BFF;
+        }
+    </style>
+    <script>
+        function navigateTo(section) {
+            switch (section) {
+                case 'anamnesis':
+                    window.location.href = 'ficha.html';
+                    break;
+                case 'vitals':
+                    window.location.href = 'parametrosVitais.html';
+                    break;
+                case 'charts':
+                    window.location.href = 'chart.html';
+                    break;
+                default:
+                    alert('Opção inválida!');
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="header">
+        <h1>Prontuário Veterinário</h1>
+    </div>
+    <div class="container">
+        <div class="menu">
+            <h2>Selecione uma Opção</h2>
+            <button onclick="navigateTo('anamnesis')">Anamnese</button>
+            <button onclick="navigateTo('vitals')">Parâmetros Vitais</button>
+            <button onclick="navigateTo('charts')">Gráficos dos Parâmetros Vitais</button>
+        </div>
+    </div>
+</body>
+</html>

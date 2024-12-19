@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Horários</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            color: #007BFF;
+        }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .day {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .day:hover {
+            background-color: #e9f7fd;
+            transform: scale(1.05);
+        }
+        .day.booked {
+            background-color: #e74c3c;
+            color: white;
+            cursor: not-allowed;
+        }
+        .day.available {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+        .legend-box {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border-radius: 4px;
+        }
+        .legend-box.booked {
+            background-color: #e74c3c;
+        }
+        .legend-box.available {
+            background-color: #2ecc71;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            width: 400px;
+            padding: 20px;
+            z-index: 1000;
+        }
+        .modal.active {
+            display: block;
+        }
+        .modal-header {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .modal-footer {
+            text-align: right;
+        }
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .btn-primary {
+            background-color: #007BFF;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .time-slot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .time-slot input {
+            flex: 1;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Controle de Horários</h1>
+        <div class="calendar" id="calendar"></div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box booked"></div>
+                <span>Ocupado</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box available"></div>
+                <span>Disponível</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-header">Horários Disponíveis</div>
+        <div class="modal-body" id="modal-body">
+            <!-- Horários serão carregados dinamicamente -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-danger" id="close-modal">Cancelar</button>
+            <button class="btn btn-primary" id="save-time">Salvar</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", loadCalendar);
+
+        const schedule = {
+            "2024-12-18": ["09:00", "10:00", "11:00"],
+            "2024-12-19": ["14:00", "15:00"],
+        };
+        let selectedDate = null;
+
+        function loadCalendar() {
+            const calendar = document.getElementById('calendar');
+            const daysInMonth = 31;
+            const month = "2024-12";
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = `${month}-${String(day).padStart(2, '0')}`;
+                const dayDiv = document.createElement('div');
+                dayDiv.classList.add('day');
+
+                if (schedule[date]) {
+                    dayDiv.classList.add('booked');
+                    dayDiv.innerHTML = `${day}<br>Ocupado`;
+                } else {
+                    dayDiv.classList.add('available');
+                    dayDiv.innerHTML = `${day}<br>Disponível`;
+                    dayDiv.addEventListener('click', () => openModal(date));
+                }
+
+                calendar.appendChild(dayDiv);
+            }
+        }
+
+        function openModal(date) {
+            selectedDate = date;
+            const modal = document.getElementById('modal');
+            const modalBody = document.getElementById('modal-body');
+            modalBody.innerHTML = '';
+
+            if (schedule[date]) {
+                schedule[date].forEach((time) => {
+                    const timeSlot = document.createElement('div');
+                    timeSlot.classList.add('time-slot');
+
+                    const timeLabel = document.createElement('span');
+                    timeLabel.textContent = time;
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.placeholder = 'Observação';
+
+                    timeSlot.appendChild(timeLabel);
+                    timeSlot.appendChild(input);
+                    modalBody.appendChild(timeSlot);
+                });
+            } else {
+                modalBody.textContent = 'Nenhum horário disponível para este dia.';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.classList.remove('active');
+        }
+
+        function saveTime() {
+            const modal = document.getElementById('modal');
+            const inputs = modal.querySelectorAll('.time-slot input');
+            const observations = [];
+
+            inputs.forEach((input, index) => {
+                if (input.value.trim()) {
+                    observations.push({ time: schedule[selectedDate][index], note: input.value.trim() });
+                }
+            });
+
+            if (observations.length > 0) {
+                console.log(`Horários marcados para ${selectedDate}:`, observations);
+                alert(`Horários marcados com sucesso para ${selectedDate}. Confira o console para detalhes.`);
+            } else {
+                alert('Nenhuma observação foi adicionada.');
+            }
+
+            closeModal();
+        }
+
+        document.getElementById('close-modal').addEventListener('click', closeModal);
+        document.getElementById('save-time').addEventListener('click', saveTime);
+    </script>
+</body>
+</html>
